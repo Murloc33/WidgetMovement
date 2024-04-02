@@ -1,0 +1,58 @@
+#include <QTimer>
+#include <QPushButton>
+#include <QWidget>
+
+#include "mainwindow.h"
+
+MainWindow::MainWindow(QWidget *parent)
+	: QMainWindow(parent)
+{
+	resize(300, 600);
+
+	m_timer = new QTimer(this);
+
+	m_timer->setInterval(m_randomizer.bounded(100,1000));
+	m_timer->start();
+
+	connect(m_timer, &QTimer::timeout, [this]
+	{
+		m_timer->setInterval(m_randomizer.bounded(100,1000));
+		m_timer->start();
+
+		auto pb = new QPushButton("*", this);
+		pb->setMouseTracking(true);
+
+		const qint32 startPositionX = m_randomizer.bounded(30, this->width() - 30);
+		const qint32 startPositionY = 10;
+
+		pb->setGeometry(startPositionX, startPositionY, 25, 25);
+		pb->show();
+
+		const auto speed = m_randomizer.bounded(1,10);
+
+		auto moveTimer = new QTimer(pb);
+		moveTimer->setInterval(100);
+		moveTimer->start();
+
+		connect(moveTimer, &QTimer::timeout, [pb, speed, this]
+		{
+			pb->move(pb->pos() + QPoint(0, speed * (pb->underMouse() ? 2 : 1)));
+
+			if (pb->pos().y() > height())
+			{
+				pb->deleteLater();
+				setPalette(QPalette(QPalette::Background, Qt::red));
+				setWindowTitle("You LOOSE!");
+			}
+		});
+
+		connect(pb, &QPushButton::clicked,
+				pb, &QPushButton::deleteLater);
+	});
+
+	m_timer->start();
+}
+
+MainWindow::~MainWindow()
+{
+}
